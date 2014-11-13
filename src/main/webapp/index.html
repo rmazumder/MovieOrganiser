@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Movie Manager</title>
+<script	src="plugins/jquery/jquery.min.js"></script>
+<script type='text/javascript' 	src="plugins/angularjs/angular.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" 	href="plugins/bootstrap/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" 	href="plugins/bootstrap/css/bootstrap-theme.min.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="plugins/bootstrap/js/bootstrap.min.js"></script>
+<link rel="stylesheet" type="text/css" href="plugins/gritter/css/jquery.gritter.css" />
+<script type="text/javascript" src="plugins/gritter/js/jquery.gritter.js"></script>
+
+<script src="script/mm.js"></script>
+
+<style>
+
+body {
+	font-family: Verdana, Arial, Sans-serif;
+	font-size: 1em;
+		
+}
+
+.form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control {
+    //background-color: #fff;
+    cursor: auto;
+    opacity: 1;
+    }
+    
+   
+</style>
+
+</head>
+<body ng-app="movieApp" ng-controller="MovieController">
+
+
+
+
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+       <img alt="Movie Manager" width="50px" src="images/logo.png">
+      <strong><font size="3" face="verdana" >Movie Manager</font></strong>&nbsp;v1.0&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      
+      <form class="navbar-form navbar-left" name="form" role="search" novalidate>
+        <div class="input-group input-group-sm">
+          <input type="text" size="50" class="form-control" placeholder="Enter folder path to scan for movies" ng-model="scanlocation" name="scanlocation" required>
+        </div>
+        <button type="submit" ng-click="scan()" ng-disabled="form.$invalid" class="btn btn-default btn-sm">Scan</button>
+        <button  ng-click="refresh()" class="btn btn-default btn-sm"><span class="glyphicon glyphicon glyphicon-refresh"></span> Refresh from Database </button>
+         <img id="spinner" ng-src="images/spinner.gif" style="display:none;">
+      </form>
+      
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#"><b>developed by ruhul.mazumder@gmail.com</b></a></li>
+       </ul> 
+      
+      
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+ 
+
+	<div class="container-fluid">
+
+		<div class="row">
+			<div class="col-md-4">
+				<div class="panel panel-default">
+					<div class="panel-heading">Movie List : Total # {{records.records.length}}
+					</div>
+					<div class="panel-body">
+						<div>
+							<div class="input-group input-group-sm">
+									<span class=" input-group-addon glyphicon glyphicon glyphicon-search">&nbsp;Search</span>
+									<input type="text" class="form-control" ng-model="search" placeholder="Enter Search text here">
+							</div>
+
+   
+
+
+							 <table id="movietable" class="table table-striped table-bordered table-hover table-condensed" >
+								<tr>
+									<th>Name</th>
+									<th ng-show="records.isScannedData">File</th>
+									<th ng-show="records.isDBData">Genre</th>
+									<th ng-show="records.isDBData">DirectedBy</th>
+									<th ng-show="records.isDBData">IMDB</th>
+									<th ng-show="records.isDBData">Self</th>
+								</tr>
+
+
+								<tr ng-repeat="record in records.records | filter:search | orderBy:'myMovie.imdbMovie.imdbRating':true" ng-click="select(record,$index)">
+
+									<td>{{record.myMovie.name | limitTo: 20}}</td>
+									<td  ng-show="records.isScannedData"><font size=".1em">{{record.myMovie.files | limitTo: 20}}</font></td>								
+									<td ng-show="records.isDBData">{{record.myMovie.imdbMovie.Genre  | limitTo: 20}}</td>
+									<td ng-show="records.isDBData">{{record.myMovie.imdbMovie.Director}}</td>
+									<td ng-show="records.isDBData">{{record.myMovie.imdbMovie.imdbRating}}</td>
+									<td ng-show="records.isDBData">{{record.myMovie.ratings}}</td>
+								</tr>
+							</table> 
+
+
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-8">
+				<div class="panel panel-default">
+					<div class="panel-heading">Movie Details
+					<button type="button" ng-show="records.isDBData" ng-click="delete()" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Delete</button>
+					
+					 <button type="button" ng-show="records.isDBData && !readonly" ng-click="update('update')" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Save</button>
+					
+					 <button type="button" ng-show="records.isScannedData" ng-click="update('new')" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Save</button>
+					 <button ng-show="records.isDBData" ng-click="edit()" type="button" style="float: right;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-edit""></span> Edit</button>
+        			 
+        			</div>
+					<div class="panel-body">
+						<div>
+						
+						<table  style="width: 100%">
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Movie Name</span>
+										<input type="text" size="50" class="form-control " ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.name" placeholder="Movie Name" value=" {{records.records[selectedIndex].myMovie.name}}">
+										<button ng-show="records.isScannedData" id="addButton" class="form-control btn btn-default" ng-click="lookup(records.records[selectedIndex].myMovie.name)">Lookup Online</button>					
+									</div>
+								</td>
+									 
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp;
+								</td>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Genere</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Genre" placeholder="Genere"  value=" {{records.records[selectedIndex].myMovie.imdbMovie.Genre}}">
+										<span class="input-group-addon">IMDbRating</span>
+										<input type="text" class="form-control" size="5" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.imdbRating" placeholder="IMDb"  value=" {{records.records[selectedIndex].myMovie.imdbMovie.imdbRating}}">
+										<span class="input-group-addon">IMDb</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.imdbID" placeholder="IMDb ID" value={{records.records[selectedIndex].imdbMovie.imdbID}}>
+										
+									</div>
+								</td>
+							</tr>
+							
+							<tr>
+								<td colspan="3">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Director</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Director" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Director}}">
+									</div>
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp;
+								</td>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Year</span>
+										<input type="text" size="5" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Year" placeholder="Year" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Year}}">
+										<span class="input-group-addon">Released</span>
+										<input type="text" size="10" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Released" placeholder="Released" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Released}}">
+		
+    
+									</div>
+								</td>
+							</tr>
+							
+							<tr>
+								<td colspan="3">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Actors</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Actors" placeholder="Actors" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Actors}}">
+									</div>
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp;
+								</td>
+								<td rowspan="11">
+<!-- 									<img align="middle" ng-src="{{records.records[selectedIndex].myMovie.imdbMovie.Poster}}" class="img-thumbnail"  alt="....."> 
+ --> 									
+ 									<img src="data:image/png;base64, {{image|| records.records[selectedIndex].myMovie.imdbMovie.base64Image	}}" class="img-thumbnail"  alt="....."> 
+ 									
+								</td>
+							</tr>
+							
+							<tr>
+								<td colspan="2">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr> 
+							
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Writer</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Writer" placeholder="Writer" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Writer}}">
+									</div>
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp;
+								</td>
+								
+							</tr>
+							
+							<tr>
+								<td colspan="2">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr> 
+							
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Language</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Language" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Language}}">
+									</div>
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp; 
+								</td>
+								
+							</tr>
+							
+							<tr>
+								<td colspan="2">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr> 
+							
+							<tr>
+								<td>
+									<div>IMdb Plot
+										<textarea  rows="10" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Plot">{{records.records[selectedIndex].myMovie.imdbMovie.Plot}}</textarea>
+									</div>
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp;
+								</td>
+								
+							</tr>
+							
+							
+							<tr>
+								<td colspan="2">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr> 
+							
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon" >Awards </span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Awards" placeholder="Awards" value={{records.records[selectedIndex].myMovie.imdbMovie.Awards}}>
+									</div>	
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp; 
+								</td>
+								
+								
+							</tr>
+							
+							
+							<tr>
+								<td>
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Location</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.files" placeholder="Location" value={{records.records[selectedIndex].myMovie.files}}>
+									</div>	
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp; 
+								</td>
+								
+								
+							</tr>
+							<tr>
+									<td>
+									<div class="input-group input-group-sm">
+									<span class="input-group-addon">Watched</span> <span class="input-group-addon"> 
+									<input type="checkbox" ng-readonly="readonly" ng-model=records.records[selectedIndex].myMovie.watched>
+
+									</span> <span class="input-group-addon">Self Rating</span> <input
+										type="text" size="10" class="form-control"
+										ng-readonly="readonly"
+										ng-model="records.records[selectedIndex].myMovie.ratings"
+										placeholder="Self Rating"
+										value=" {{records.records[selectedIndex].myMovie.ratings}}">
+										</div>
+									</td>
+									<td>
+									&nbsp; &nbsp; &nbsp; &nbsp; 
+								</td>
+								
+								
+							</tr>
+							<tr>
+								<td colspan="3">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+							</tr> 
+							
+							<tr>
+								<td colspan="3">
+									<div class="input-group input-group-sm">
+										<span class="input-group-addon">Rated</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Rated" placeholder="Rated" value={{records.records[selectedIndex].imdbMovie.Rated}}>
+										<span class="input-group-addon">Runtime</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Runtime" placeholder="Runtime" value={{records.records[selectedIndex].imdbMovie.Runtime}}>
+										<span class="input-group-addon">Metascore</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Metascore" placeholder="Metascore" value={{records.records[selectedIndex].imdbMovie.Metascore}}>
+										<span class="input-group-addon">imdbVotes</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.imdbVotes" placeholder="imdbVotes" value={{records.records[selectedIndex].imdbMovie.imdbVotes}}>
+										<span class="input-group-addon">Type</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Type" placeholder="imdbVotes" value={{records.records[selectedIndex].imdbMovie.Type}}>
+										
+									</div>	
+								</td>
+								<td>
+									&nbsp; &nbsp; &nbsp; &nbsp; 
+								</td>
+								
+								
+							</tr>
+
+						</table>
+						
+						
+						</div>
+					
+				</div>
+				</div>
+				</div>
+				
+
+			</div>
+	</div>
+
+ <button id="addButton" ng-click="scan()">Scan</button>
+
+
+
+	<script type="text/javascript">
+
+</script>
+
+
+</body>
+</html>
