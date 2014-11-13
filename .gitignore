@@ -45,3 +45,6 @@ Temporary Items
 # java projects
 *.class
 target
+.settings
+.classpath
+.project
