@@ -1,23 +1,46 @@
-// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
-// Jad home page: http://www.kpdus.com/jad.html
-// Decompiler options: packimports(3) 
-// Source File Name:   GridData.java
 
 package com.ram.mm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
 import com.google.gson.annotations.Expose;
 
 public class GridData
 {
+	@Expose
+    String status;
+    
+    @Expose
+    List records;
+    
+    @Expose
+    int total;
+    
+    @Expose
+    boolean isScannedData;
+    
+    @Expose
+    boolean isDBData;
+    
+    @Expose
+    public String error;
+    
+    @Expose
+    public Properties properties;
 
+    @Expose
+	public Set ignoredExtensions;
+    
+    
     public GridData()
     {
         records = new ArrayList();
         isScannedData = false;
         isDBData = false;
+        
     }
 
     public void setRecords(List movieRecords)
@@ -37,21 +60,5 @@ public class GridData
         total = records.size();
     }
 
-    @Expose
-    String status;
-    
-    @Expose
-    List records;
-    
-    @Expose
-    int total;
-    
-    @Expose
-    boolean isScannedData;
-    
-    @Expose
-    boolean isDBData;
-    
-    @Expose
-    public String error;
+   
 }

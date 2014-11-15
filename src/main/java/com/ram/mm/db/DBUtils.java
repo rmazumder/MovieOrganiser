@@ -45,6 +45,29 @@ public class DBUtils
             throw new MMException(e.getMessage());
         }
     }
+    
+    public static void deleteMyMovie(String entityName) throws MMException
+    {
+    	
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = null;
+        try
+        {
+            tx = session.beginTransaction();
+            MyMovie movie = (MyMovie)session.get(MyMovie.class, entityName);
+            movie.imdbMovie = null;
+            session.delete(movie);
+            tx.commit();
+        }
+        catch(Exception e)
+        {
+            if(tx != null)
+                tx.rollback();
+            e.printStackTrace();
+            throw new MMException(e.getMessage());
+        }
+    }
+
 
    
 
@@ -78,20 +101,21 @@ public class DBUtils
         return entities;
     }
 
-    public static void main(String r[])
+    public static void main(String r[]) throws MMException
     {
-        IMDBMovie movie = new IMDBMovie();
-        movie.setImdbID("dsdsds");
-        movie.setTitle("dsds");
-        movie.setGenre("1212121");
-        MyMovie mymov = new MyMovie();
-        mymov.setName("dsdsds");
-        mymov.setImdbMovie(movie);
-        List movies = ListEntity("FROM MyMovie");
-        MyMovie m;
-        for(Iterator iterator = movies.iterator(); iterator.hasNext(); System.out.println(m.getImdbMovie()))
-            m = (MyMovie)iterator.next();
+    	
+     
+        List<MyMovie> movies = ListEntity("FROM MyMovie");
+        for(MyMovie mov : movies){
+        	System.out.println(mov.name);
+        }
+        
+       // deleteEntity("name");
+        
+        	movies = ListEntity("FROM MyMovie");
+        for(MyMovie mov : movies){
+        	System.out.println(mov.name);
+        }
 
-        System.out.println(movie);
     }
 }

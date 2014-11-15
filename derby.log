@@ -1,0 +1,10 @@
+----------------------------------------------------------------
+Thu Nov 13 20:30:47 IST 2014:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.8.2.2 - (1181258): instance a816c00e-0149-a9ab-c72b-0000012b7630 
+on database directory D:\GitHub\MovieOrganiser\moviemanager.db  with class loader WebAppClassLoader=Archetype Created Web Application@14a6706 
+Loaded from file:/D:/apache-maven-3.0.5/repository/org/apache/derby/derby/10.8.2.2/derby-10.8.2.2.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.7.0_45-b18
+user.dir=D:\GitHub\MovieOrganiser
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''

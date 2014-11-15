@@ -20,6 +20,7 @@ app.controller('MovieController', ['$scope', '$http','$filter', function ($scope
         $http.get('rest/mmapi/load').success(function (data) {
         	if(data.status=='success') {
         		$scope.records = data;
+        		 $scope.properties = data.properties;
         		
         	} else {
         		glitterAlert("Warning Message!" , "Unable to load movies from database"+ data.error);
@@ -39,7 +40,6 @@ app.controller('MovieController', ['$scope', '$http','$filter', function ($scope
     $scope.scan = function () {
       $http.get('rest/mmapi/scan?location='+$scope.scanlocation).success(function (data) {
           $scope.records = data;
-      
           $scope.readonly = false;
           if(data.records.length==0){
         	  glitterAlert("Warning Message !!" , "No movie files found in the location <b><i>" + $scope.scanlocation +"</i></b>. Please try againg with different location");
@@ -49,6 +49,9 @@ app.controller('MovieController', ['$scope', '$http','$filter', function ($scope
     
     $scope.select = function (record, index) {
       $scope.selectedIndex = $scope.records.records.indexOf(record);
+      if($scope.records.isDBData){
+    	  $scope.loadSimilar();
+      }
     };
     
     $scope.lookup = function (name) {
@@ -86,10 +89,46 @@ app.controller('MovieController', ['$scope', '$http','$filter', function ($scope
     
     $scope.delete = function (record, index) {
         if (confirm("Sure to Delete?")) {
-          //  $http.delete('https://api.parse.com/1/classes/om01/' + record.objectId).success(function (data) {
-           //     $scope.records.splice(index, 1);
-           // });
+        	$http.delete('rest/mmapi/delete/'+$scope.records.records[ $scope.selectedIndex].myMovie.name).success(function (data) {
+        		if(data.status=='success'){        			
+        				$scope.records.records.splice($scope.selectedIndex, 1);        			
+        				glitterAlert("Information!!" , "Movie updated successfully");
+        		} else {
+            		glitterAlert("Error Message!" , "Could not update to database ! Error Message "+ data.error);
+            	}
+             });
         }
+    };
+    
+    $scope.ignore = function (record, index) {         			
+        	$scope.records.records.splice($scope.selectedIndex, 1);              
+    };
+    
+    $scope.loadSimilar = function () {
+    	if($scope.properties['rt_api_key']==''){
+    		return;
+    	}
+    	var imdbid  = $scope.records.records[ $scope.selectedIndex].myMovie.imdbMovie.imdbID;
+    	imdbid  = imdbid.substring(2,imdbid.length);
+    	$http.jsonp("http://api.rottentomatoes.com/api/public/v1.0/movie_alias.json?apikey="+$scope.properties['rt_api_key'] +"&type=imdb&id="+imdbid+"&callback=JSON_CALLBACK").success(function(data){
+    		if(angular.isDefined(data.links)) {
+            $http.jsonp(data.links.similar+"?apikey=nnwwsqebr3fb4egs5yh6652d&callback=JSON_CALLBACK").success(function(data){
+                $scope.similar_movies = data.movies;
+                
+            });
+            }
+        });
+    };
+    
+    $scope.saveSettings = function () {
+    	$http.post('rest/mmapi/savesetting/',$scope.properties).success(function (data) {
+    		if(data.status=='success'){
+    			$("#myModal").modal('hide');
+    			glitterAlert("Information !" , "Settings updated sucessfully");
+    		} else {
+        		glitterAlert("Error Message!" , "Could not update to database ! Error Message "+ data.error);
+        	}
+         });
     };
    
 }]);

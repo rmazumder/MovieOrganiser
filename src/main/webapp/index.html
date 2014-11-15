@@ -30,8 +30,15 @@ body {
     cursor: auto;
     opacity: 1;
     }
-    
-   
+ 
+ .navbar-default {
+    background-color: BLUE;
+    border-color: #E7E7E7;
+    background-image: linear-gradient(to bottom, #f9f9f9 0px, #b9b9b9 100%);
+} 
+
+
+	
 </style>
 
 </head>
@@ -52,16 +59,23 @@ body {
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       
       <form class="navbar-form navbar-left" name="form" role="search" novalidate>
+       <button  ng-click="refresh()" class="btn btn-default btn-sm"><span class="glyphicon glyphicon glyphicon-refresh"></span> Refresh</button>
+      &nbsp;&nbsp;&nbsp;
         <div class="input-group input-group-sm">
           <input type="text" size="50" class="form-control" placeholder="Enter folder path to scan for movies" ng-model="scanlocation" name="scanlocation" required>
         </div>
         <button type="submit" ng-click="scan()" ng-disabled="form.$invalid" class="btn btn-default btn-sm">Scan</button>
-        <button  ng-click="refresh()" class="btn btn-default btn-sm"><span class="glyphicon glyphicon glyphicon-refresh"></span> Refresh from Database </button>
+      
+        
          <img id="spinner" ng-src="images/spinner.gif" style="display:none;">
+         
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <button  class="btn btn-default btn-sm " data-toggle="modal" data-target="#myModal"><span class="glyphicon glyphicon glyphicon-wrench" ></span> Settings</button>
+        
       </form>
       
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#"><b>developed by ruhul.mazumder@gmail.com</b></a></li>
+        <li><a href="#"><b>- ruhul.mazumder@gmail.com</b></a></li>
        </ul> 
       
       
@@ -121,6 +135,7 @@ body {
 					<button type="button" ng-show="records.isDBData" ng-click="delete()" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Delete</button>
 					
 					 <button type="button" ng-show="records.isDBData && !readonly" ng-click="update('update')" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Save</button>
+					 <button type="button" ng-show="records.isScannedData" ng-click="ignore()" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Ignore</button>
 					
 					 <button type="button" ng-show="records.isScannedData" ng-click="update('new')" style="float: right; margin-left: 10px;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-ok"></span> Save</button>
 					 <button ng-show="records.isDBData" ng-click="edit()" type="button" style="float: right;" class="btn btn-primary btn-xs"> <span class="glyphicon glyphicon-edit""></span> Edit</button>
@@ -144,12 +159,14 @@ body {
 								</td>
 								<td>
 									<div class="input-group input-group-sm">
-										<span class="input-group-addon">Genere</span>
-										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Genre" placeholder="Genere"  value=" {{records.records[selectedIndex].myMovie.imdbMovie.Genre}}">
+										
 										<span class="input-group-addon">IMDbRating</span>
 										<input type="text" class="form-control" size="5" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.imdbRating" placeholder="IMDb"  value=" {{records.records[selectedIndex].myMovie.imdbMovie.imdbRating}}">
+										<span class="input-group-addon">Year</span>
+										<input type="text" size="5" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Year" placeholder="Year" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Year}}">
 										<span class="input-group-addon">IMDb</span>
-										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.imdbID" placeholder="IMDb ID" value={{records.records[selectedIndex].imdbMovie.imdbID}}>
+										<input type="text" id="imdbid" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.imdbID" placeholder="IMDb ID" value={{records.records[selectedIndex].imdbMovie.imdbID}}>
+										<span id="imdblink" class="input-group-addon glyphicon glyphicon-link" data-toggle="tooltip" data-placement="left" title="Click on this icon to open the movie in IMDb website"></span>
 										
 									</div>
 								</td>
@@ -171,8 +188,9 @@ body {
 								</td>
 								<td>
 									<div class="input-group input-group-sm">
-										<span class="input-group-addon">Year</span>
-										<input type="text" size="5" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Year" placeholder="Year" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Year}}">
+									<span class="input-group-addon">Genere</span>
+										<input type="text" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Genre" placeholder="Genere"  value=" {{records.records[selectedIndex].myMovie.imdbMovie.Genre}}">
+										
 										<span class="input-group-addon">Released</span>
 										<input type="text" size="10" class="form-control" ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.imdbMovie.Released" placeholder="Released" value=" {{records.records[selectedIndex].myMovie.imdbMovie.Released}}">
 		
@@ -334,7 +352,81 @@ body {
 							</tr>
 
 						</table>
+						<h4>
 						
+						<label ng-show="properties['rt_api_key']==''" class="label label-default" data-toggle="tooltip" data-placement="right" title="Similar movies are retrived with Rotten tomatoes API. To enable this feature add rt-api_key from Setting. To get the api key please register in rotton tomatoes website. Its free. http://www.rottentomatoes.com/">
+													 Similar Movies list is disable. Why ?</label>
+						<label ng-show="properties['rt_api_key']!=''" class="label label-default" >
+													 {{similar_movies.length}} Similar Movie(s) found for {{records.records[selectedIndex].myMovie.imdbMovie.Title}}</label></h4>
+						<div style="margin-top: 10px" id="myCarousel" class="carousel slide col-md-4">
+							   <!-- Carousel indicators -->
+							  
+							   <!-- Carousel items -->
+							   <div class="carousel-inner">
+							      <div class="item" ng-repeat="mov in similar_movies" ng-class="{active: $index == 0}" >
+							     	 <span style="display: inline-block;">
+							     	 	<table>
+							     	 		<tr>
+							      		 		<td rowspan="4"><img  ng-src="{{mov.posters.detailed}}" width="100px" class="img-thumbnail" alt="Second slide"></td>	
+							  					<td><b>Movie Title<b> : {{mov.title}}	</td>						  				
+							  				</tr>
+							  				<tr>
+							  					<td>Movie Title : {{mov.year}}	</td>
+							  				</tr>
+							  				<tr>
+							  					<td>Audience Score : {{mov.ratings['audience_score']}}	</td>
+							  				</tr>
+							  				<tr>
+							  					<td>IMDb ID : tt{{mov.alternate_ids['imdb']}}	</td>
+							  				</tr>
+							  			</table>	
+							          </span>
+							      </div>
+							 
+							   </div>
+							   <!-- Carousel nav -->
+							   <a class="carousel-control left" href="#myCarousel" 
+							      data-slide="prev">&lsaquo;</a>
+							   <a class="carousel-control right" href="#myCarousel" 
+							      data-slide="next">&rsaquo;</a>
+							   <!-- Controls buttons -->
+							   <div ng-show="similar_movies.length > 0" style="text-align:center;">
+									
+							      <input type="button" class="btn prev-slide" value="Prev">
+							      <input type="button" class="btn next-slide" value="Next ">
+							
+							   </div>
+							</div> 
+								<script>
+								   $(function(){
+								      // Initializes the carousel
+								      $(".start-slide").click(function(){
+								         $("#myCarousel").carousel('cycle');
+								      });
+								      // Stops the carousel
+								      $(".pause-slide").click(function(){
+								         $("#myCarousel").carousel('pause');
+								      });
+								      // Cycles to the previous item
+								      $(".prev-slide").click(function(){
+								         $("#myCarousel").carousel('prev');
+								      });
+								      // Cycles to the next item
+								      $(".next-slide").click(function(){
+								         $("#myCarousel").carousel('next');
+								      });
+								      // Cycles the carousel to a particular frame 
+								      $(".slide-one").click(function(){
+								         $("#myCarousel").carousel(0);
+								      });
+								      $(".slide-two").click(function(){
+								         $("#myCarousel").carousel(1);
+								      });
+								      $(".slide-three").click(function(){
+								         $("#myCarousel").carousel(2);
+								      });
+								   });
+								</script>
 						
 						</div>
 					
@@ -346,12 +438,60 @@ body {
 			</div>
 	</div>
 
- <button id="addButton" ng-click="scan()">Scan</button>
+
+<!-- Button trigger modal -->
 
 
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title" id="myModalLabel">Setting Page</h4>
+      </div>
+      <div class="modal-body">
+      <table class= "table table-striped table-bordered table-hover table-condensed">
+        <tr ng-repeat='(key, value) in properties'>
+        <td align="right"><h4><span class="label label-default">{{key}}</span></h4></td>
+			
+		<td><input type="text" class="form-control"  ng-model="properties[key]"  value=" {{value}}"></td>
+		</tr>
+      </table>
+      </div>
+      <hr>
+      <div class="pull-center" ng-show="records.ignoredExtensions.length > 0">
+      		<table align="center" >
+      		<tr>
+      			<td><h4><span class="label label-default">Last scan ignored extension</span></h4> </td>
+      			<td><select class="form-control"  size="3">  <option ng-repeat= "ext in records.ignoredExtensions">{{ext}} &nbsp;</option></select></td>
+      		</tr>
+      		</table>	
+      			
+     	</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" ng-click="saveSettings()" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 	<script type="text/javascript">
-
+	function openIMDbSite(){
+		console.log($("#imdbid").value());
+	}
+	 $(function () {
+		 
+		 $("#imdblink").click(function() {
+			
+			 window.open("http://www.imdb.com/title/"+$("#imdbid").val(), '_blank');
+		 });
+		 
+		 $("[data-toggle='tooltip']").tooltip(); 
+		 }
+	 
+	 );
 </script>
 
 

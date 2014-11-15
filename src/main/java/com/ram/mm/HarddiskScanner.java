@@ -57,7 +57,7 @@ public class HarddiskScanner
             for(int l = 0; l < i1; l++)
             {
                 String extension = as[l];
-                if(file.getName().endsWith(extension))
+                if(file.getName().toLowerCase().endsWith(extension.toLowerCase()))
                 {
                     movies.put(file.getAbsolutePath(), file.getName());
                     added = true;

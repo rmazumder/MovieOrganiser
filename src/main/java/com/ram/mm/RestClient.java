@@ -24,7 +24,7 @@ import com.ram.mm.dto.MyMovie;
 public class RestClient {
  
 	String imdbURL = "http://www.omdbapi.com/?y=&plot=full&r=json&t=";
-	public static String RT_URL = "http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=nnwwsqebr3fb4egs5yh6652d&page_limit=1&q=";
+	public static String RT_URL = "http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=[api_key]&page_limit=1&q=";
 	
 	public IMDBMovie fetchIMDBData(String movieName) {
 		movieName =  movieName.replace(" ", "+");

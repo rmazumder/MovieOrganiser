@@ -3,14 +3,25 @@
 package com.ram.mm;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -36,7 +47,24 @@ import com.ram.mm.dto.MyMovie;
 @Path("/mmapi")
 public class MovieManager
 {
-
+	
+	public static Properties appProperties = null;
+	
+	
+	public MovieManager(){
+		appProperties = new Properties();
+		try {
+			appProperties.load(new FileInputStream(new File("mm.properties")));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			appProperties = new Properties();
+			appProperties.put("media_ext", ".avi,.mpg,.mkv,.mov,.dat");
+			appProperties.put("rt_api_key", "");
+			appProperties.put("media_fileExtractor_regex1", "(.*?)(dvdrip|xvid| cd[0-9]|dvdscr|brrip|divx|[\\{\\(\\[]?[0-9]{4}).*");
+			appProperties.put("media_fileExtractor_regex2","(.*?)\\(.*\\)(.*)");
+			
+		}
+	}
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/load")
@@ -54,6 +82,7 @@ public class MovieManager
 			}
 
 			gData.isDBData = true;
+			gData.properties = appProperties;
 			gData.setStatus("success");
 		}catch(Exception e){
             gData.setStatus("failure");
@@ -70,9 +99,9 @@ public class MovieManager
     public Response scanData(@QueryParam("location") String  location)
     {
         HarddiskScanner scan = new HarddiskScanner();
-        scan.mediaExtension = ".avi,.mpg,.mkv";
+        scan.mediaExtension = appProperties.getProperty("media_ext");
         scan.mediaLocation = location;
-        HashMap movies = new HashMap();
+        HashMap<String,String> movies = new HashMap();
         try
         {
             movies = scan.scanForMovies();
@@ -82,23 +111,22 @@ public class MovieManager
             e.printStackTrace();
         }
         GridData gdata = new GridData();
-        MovieGrid movieGrid;
         List<MyMovie> dbMovies = DBUtils.ListEntity("FROM MyMovie");
-        for(Iterator iterator = movies.entrySet().iterator(); iterator.hasNext(); gdata.addRecord(movieGrid))
+        for(Entry<String,String> entry : movies.entrySet())
         {
-            Entry entry = (Entry)iterator.next();
-            movieGrid = new MovieGrid();
-            if(movieExistInDB((String)entry.getKey(), dbMovies)){
+            MovieGrid movieGrid = new MovieGrid();
+            if(movieExistInDB(entry.getKey(), dbMovies)){
             	continue;
             }
             MyMovie movie = new MyMovie();
-            String movieName =  FilenameUtils.removeExtension((String)entry.getValue());
+            String movieName =  applyPatternMatcher((String)entry.getValue());
             movieName = movieName.replace(".", " ");
             movie.name = movieName;
             movie.files = (String)entry.getKey();
             movieGrid.setMyMovie(movie);
+            gdata.addRecord(movieGrid);
         }
-
+        gdata.ignoredExtensions =  scan.ignoredList;
         gdata.isScannedData = true;
         Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         gdata.setStatus("success");
@@ -187,6 +215,73 @@ public class MovieManager
         return Response.status(200).entity(gson.toJson(gdata)).build();
     }
 
+ 
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/delete/{name}")
+    
+    public Response delete(@PathParam("name") String name)
+    {
+    	 GridData gData = new GridData();
+    	try {
+			DBUtils.deleteMyMovie(name);
+			gData.status = "success";
+		} catch (MMException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			gData.status = "failure";
+			gData.error = e.getMessage();
+			
+		}
+        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+        return Response.status(200).entity(gson.toJson(gData)).build();
+    }
+    
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/savesetting")
+    
+    public Response saveSetting(@Context HttpServletRequest httpRequest)
+    {
+        GridData gdata = new GridData();
+        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+        try
+        {
+            InputStream is = httpRequest.getInputStream();
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            byte buf[] = new byte[32];
+            for(int r = 0; r >= 0;)
+            {
+                r = is.read(buf);
+                if(r >= 0)
+                    os.write(buf, 0, r);
+            }
+
+            String s = new String(os.toByteArray(), "UTF-8");
+            String decoded = URLDecoder.decode(s, "UTF-8");
+            System.out.println(decoded);
+            JSONObject requestObj = (JSONObject)(new JSONParser()).parse(decoded);
+            for ( Object key : requestObj.keySet()){
+            	String value = (String)requestObj.get(key);
+            	appProperties.put((String)key, value);
+            	
+            }
+            
+            appProperties.store(new FileOutputStream(new File("mm.properties")), "");
+            
+            
+           
+            gdata = new GridData();
+            gdata.status = "success";
+        }
+        catch(Exception e)
+        {
+            gdata.status = "failure";
+            gdata.error = e.getMessage();
+        }
+        return Response.status(200).entity(gson.toJson(gdata)).build();
+    }
+    
     private boolean movieExistInDB(String key, List<MyMovie> dbMovies) {
 		for(MyMovie movie : dbMovies){
 			String filesS = movie.getFiles();
@@ -202,4 +297,41 @@ public class MovieManager
 		
 		return false;
 	}
+    
+    private String applyPatternMatcher(String data){
+    	String mydata = data.toLowerCase();
+		ArrayList<String> patterns = new ArrayList<String>();
+		//patterns.add("(.*?)(dvdrip|xvid| cd[0-9]|dvdscr|brrip|divx|[\\{\\(\\[]?[0-9]{4}).*");
+		//patterns.add("(.*?)\\(.*\\)(.*)");
+		patterns.add(appProperties.getProperty("media_fileExtractor_regex1"));
+		patterns.add(appProperties.getProperty("media_fileExtractor_regex2"));
+
+		
+		
+		mydata = FilenameUtils.removeExtension(mydata);
+		
+		
+		for(String patternString : patterns) {
+			if(mydata.equals("")) {
+				break;
+			}
+				Pattern pattern = Pattern.compile(patternString);
+				Matcher matcher = pattern.matcher(mydata);
+				if (matcher.find())
+				{
+					mydata =  matcher.group(1);
+				}
+		}
+		
+		if(!mydata.equals("")){
+			mydata = mydata.replaceAll("_", " ").toLowerCase();
+			mydata = mydata.replaceAll("~", " ").toLowerCase();
+			mydata = mydata.replaceAll("-", " ").toLowerCase();
+			mydata = mydata.replaceAll("\\.", " ").toLowerCase();
+			return mydata;
+		}
+		else
+			return data;
+	}
+   
 }
