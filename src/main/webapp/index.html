@@ -150,7 +150,7 @@ body {
 									<div class="input-group input-group-sm">
 										<span class="input-group-addon">Movie Name</span>
 										<input type="text" size="50" class="form-control " ng-readonly="readonly" ng-model="records.records[selectedIndex].myMovie.name" placeholder="Movie Name" value=" {{records.records[selectedIndex].myMovie.name}}">
-										<button ng-show="records.isScannedData" id="addButton" class="form-control btn btn-default" ng-click="lookup(records.records[selectedIndex].myMovie.name)">Lookup Online</button>					
+										<button ng-show="records.isScannedData" id="addButton" class="form-control btn btn-default" ng-click="lookup(records.records[selectedIndex].myMovie.name)">Lookup online by Name/IMDb ID</button>					
 									</div>
 								</td>
 									 
@@ -352,8 +352,8 @@ body {
 							</tr>
 
 						</table>
+						<div ng-show="records.isDBData" >
 						<h4>
-						
 						<label ng-show="properties['rt_api_key']==''" class="label label-default" data-toggle="tooltip" data-placement="right" title="Similar movies are retrived with Rotten tomatoes API. To enable this feature add rt-api_key from Setting. To get the api key please register in rotton tomatoes website. Its free. http://www.rottentomatoes.com/">
 													 Similar Movies list is disable. Why ?</label>
 						<label ng-show="properties['rt_api_key']!=''" class="label label-default" >
@@ -397,17 +397,10 @@ body {
 							
 							   </div>
 							</div> 
+							</div>
 								<script>
 								   $(function(){
-								      // Initializes the carousel
-								      $(".start-slide").click(function(){
-								         $("#myCarousel").carousel('cycle');
-								      });
-								      // Stops the carousel
-								      $(".pause-slide").click(function(){
-								         $("#myCarousel").carousel('pause');
-								      });
-								      // Cycles to the previous item
+								      
 								      $(".prev-slide").click(function(){
 								         $("#myCarousel").carousel('prev');
 								      });
@@ -415,20 +408,12 @@ body {
 								      $(".next-slide").click(function(){
 								         $("#myCarousel").carousel('next');
 								      });
-								      // Cycles the carousel to a particular frame 
-								      $(".slide-one").click(function(){
-								         $("#myCarousel").carousel(0);
-								      });
-								      $(".slide-two").click(function(){
-								         $("#myCarousel").carousel(1);
-								      });
-								      $(".slide-three").click(function(){
-								         $("#myCarousel").carousel(2);
-								      });
+								     
 								   });
 								</script>
-						
+							</div>
 						</div>
+						
 					
 				</div>
 				</div>
@@ -436,7 +421,6 @@ body {
 				
 
 			</div>
-	</div>
 
 
 <!-- Button trigger modal -->

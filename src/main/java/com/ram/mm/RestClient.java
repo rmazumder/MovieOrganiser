@@ -24,11 +24,17 @@ import com.ram.mm.dto.MyMovie;
 public class RestClient {
  
 	String imdbURL = "http://www.omdbapi.com/?y=&plot=full&r=json&t=";
+	String imdbURL_byID = "http://www.omdbapi.com/?plot=full&r=json&i=";
 	public static String RT_URL = "http://api.rottentomatoes.com/api/public/v1.0/movies.json?apikey=[api_key]&page_limit=1&q=";
 	
 	public IMDBMovie fetchIMDBData(String movieName) {
 		movieName =  movieName.replace(" ", "+");
-		String url =  imdbURL + movieName;
+		String url ;
+		if(movieName.startsWith("tt")){
+			url = imdbURL_byID + movieName;
+		} else {
+			url =  imdbURL + movieName;
+		}
 		String data = processURL(url);
 		if(data == null) {
 			return null;

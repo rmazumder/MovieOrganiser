@@ -142,7 +142,13 @@ public class MovieManager
 
     	RestClient restClient = new RestClient();
     	IMDBMovie movie = null;
-    	List<IMDBMovie> imdbMovies = DBUtils.ListEntity("FROM IMDBMovie as movies where movies.Title='"+movieName+"'");
+    	List<IMDBMovie> imdbMovies ;
+    	if(movieName.startsWith("tt")){
+    		imdbMovies = DBUtils.ListEntity("FROM IMDBMovie as movies where movies.imdbID='"+movieName+"'");
+    	}
+    	else {
+    		imdbMovies = DBUtils.ListEntity("FROM IMDBMovie as movies where movies.Title='"+movieName+"'");
+    	}
     	if(imdbMovies.size() != 0){
     		System.out.println("movie fetched from cache database");
     		movie =  imdbMovies.get(0);
