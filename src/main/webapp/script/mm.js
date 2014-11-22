@@ -15,7 +15,11 @@ var app = angular.module('movieApp', [], ['$httpProvider', function ($httpProvid
 app.controller('MovieController', ['$scope', '$http','$filter', function ($scope, $http, $filter) {
 	
 	 $scope.readonly = true;
-
+	 $scope.orderByField = 'myMovie.imdbMovie.imdbRating';
+	 $scope.reverseSort = true;
+	  
+	 $selectioncount= 0;
+	 
     var displayTable = function () {
         $http.get('rest/mmapi/load').success(function (data) {
         	if(data.status=='success') {
@@ -48,6 +52,10 @@ app.controller('MovieController', ['$scope', '$http','$filter', function ($scope
     };
     
     $scope.select = function (record, index) {
+    
+     $('.tr_selected').removeClass('tr_selected');
+     var trIndex = index +2;
+      $('#movietable tr:nth-child('+trIndex+')').addClass('tr_selected');	
       $scope.selectedIndex = $scope.records.records.indexOf(record);
       if($scope.records.isDBData){
     	  $scope.loadSimilar();
