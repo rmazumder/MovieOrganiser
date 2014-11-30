@@ -2,11 +2,13 @@
 
 package com.ram.mm;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
@@ -31,6 +33,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONObject;
@@ -133,6 +136,41 @@ public class MovieManager
         return Response.status(200).entity(gson.toJson(gdata)).build();
     }
 
+    
+    @GET
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Path("/export")
+    public Response export( @Context HttpServletRequest httpRequest)
+    {
+    	GridData gData = new GridData();
+    	try {
+	    	List<MyMovie> movies = DBUtils.ListEntity("FROM MyMovie");
+	    	MovieGrid grid;
+	    	for (MyMovie movie : movies){
+	    		grid = new MovieGrid();
+				grid.setMyMovie(movie);
+				gData.addRecord(grid);
+	    	}
+	    	gData.isDBData = true;
+	    	gData.isImportedData = true;
+	    	gData.setStatus("success");
+	    	File file = new File("exported_data.json");
+	    	FileWriter fw = new FileWriter(file);
+			BufferedWriter bw = new BufferedWriter(fw);
+	        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+	        bw.write(gson.toJson(gData));
+	    	bw.close();
+	    	ResponseBuilder response = Response.ok((Object)file);
+	        response.header("Content-Disposition", "attachment; filename=" + file.getName());
+	        return response.build();
+    	}catch( Exception e) {
+    		e.printStackTrace();
+    	}
+    	return null;
+    	
+       
+    	
+    }
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/lookup")

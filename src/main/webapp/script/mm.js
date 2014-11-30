@@ -138,6 +138,21 @@ app.controller('MovieController', ['$scope', '$http','$filter', function ($scope
         	}
          });
     };
+    
+    
+    $scope.importData = function () {
+    	 $("#spinner").show();
+    	 $("#importModel").modal('hide');
+    	var f = document.getElementById('file').files[0],
+        r = new FileReader();
+    	r.onloadend = function(e){
+    		$scope.records = JSON.parse(e.target.result);
+    		 $("#spinner").hide();
+    		// console.log($scope.records.status);
+     }
+     r.readAsBinaryString(f);
+
+    };
    
 }]);
 

@@ -23,6 +23,9 @@ public class GridData
     boolean isScannedData;
     
     @Expose
+    boolean isImportedData = false;
+    
+    @Expose
     boolean isDBData;
     
     @Expose
@@ -34,6 +37,8 @@ public class GridData
     @Expose
 	public Set ignoredExtensions;
     
+    @Expose
+    String dataLabel =  System.getProperty("user.name");
     
     public GridData()
     {
